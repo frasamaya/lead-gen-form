@@ -21,12 +21,12 @@ A plugin to create form on wordpress front end
 ![alt text](https://github.com/frasamaya/lead-gen-form/blob/main/shortcode.png?raw=true)
 
 ### Shortcode
-Shortcode description:
-name is mandatory and cannot be change
-label is changable to everything you need
-required is changable to ```true``` or ```false```
-maxlength is changable to limit textfield length
-rows is changable to set textarea row
+Shortcode description:\
+name is mandatory and cannot be change\
+label is changable to everything you need\
+required is changable to ```true``` or ```false```\
+maxlength is changable to limit textfield length\
+rows is changable to set textarea row\
 
 ```
 [lgf_shortcode]
