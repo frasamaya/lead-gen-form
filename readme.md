@@ -16,11 +16,17 @@ A plugin to create form on wordpress front end
 1. Download this zip file
 2. Extract and upload extracted folder to plugin directory ```wp-content/plugins```
 3. Activate Lead Gen Form plugin
-4. Add shortcode to any wordpress editor
+4. Add shortcode ```LGF Shortcode``` to any wordpress editor
 
 ![alt text](https://github.com/frasamaya/lead-gen-form/blob/main/shortcode.png?raw=true)
 
-#### shortcode
+### Shortcode
+Shortcode description:
+name is mandatory and cannot be change
+label is changable to everything you need
+required is changable to ```true``` or ```false```
+maxlength is changable to limit textfield length
+rows is changable to set textarea row
 
 ```
 [lgf_shortcode]
