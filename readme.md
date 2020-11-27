@@ -1,13 +1,11 @@
-=== Lead Gen Form ===
+```
 Contributors: faqihamruddin.com
 Author URL: https://faqihamruddin.com
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 Requires PHP: 5.6.20
-
+```
 Wordpress Lead Generator Form
-
-== Description ==
 
 ### Lead Gen Form
 
@@ -20,7 +18,7 @@ A plugin to create form on wordpress front end
 3. Activate Lead Gen Form plugin
 4. Add shortcode to any wordpress editor
 
-![alt text](https://github.com/[username]/[reponame]/blob/[branch]/shortcode.png?raw=true)
+![alt text](https://github.com/frasamaya/lead-gen-form/blob/main/shortcode.png?raw=true)
 
 #### shortcode
 
