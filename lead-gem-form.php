@@ -48,12 +48,32 @@ class LgaGenForm {
 
   
   public function __construct() {
+    add_action( 'wp_enqueue_scripts', array( $this, 'lgf_script') );
     add_action( 'init', array( $this, 'lgf_submission_init' ) );
     add_action( 'add_meta_boxes', array( $this, 'lgf_meta_boxes' ) );
     add_action( 'save_post', array( $this, 'lgf_save_fields' ) );
-    add_action('admin_print_footer_scripts',  array( $this,'lgf_add_quicktags'));
+    add_action( 'admin_print_footer_scripts',  array( $this,'lgf_add_quicktags') );
+    add_action( 'wp_ajax_nopriv_lgf_send_form', array( $this,'lgf_send_form' ) );
+    add_action( 'wp_ajax_lgf_send_form', array( $this,'lgf_send_form' ) );
     add_shortcode( 'lgf_shortcode', array( $this, 'lgf_init_shortcode') );
-    add_shortcode( 'lgf_field', array( $this,'lgf_field_shortcode' ));
+    add_shortcode( 'lgf_field', array( $this,'lgf_field_shortcode' ) );
+  }
+
+  /**
+   * Register custom style and javascript
+   *
+   * @since 1.0
+   *
+   */
+  public function lgf_script() {
+    $plugin_url = plugin_dir_url( __FILE__ );
+    wp_enqueue_style( 'lgf_style', $plugin_url . 'css/lgf_style.css');
+    wp_enqueue_script( 'lgf_script', $plugin_url . 'js/lgf_script.js', array( 'jquery' ), null, true);
+    wp_localize_script( 'lgf_script', 'settings', array(
+        'ajaxurl'    => admin_url( 'admin-ajax.php' ),
+        'send_label' => __( 'Submit', 'lgf_submit' ),
+        'error'      => __( 'Sorry, something went wrong. Please try again', 'lgf_submit' )
+    ) );
   }
 
   /**
@@ -255,9 +275,17 @@ class LgaGenForm {
       $atts,
       'lgf_shortcode'
     );
-    $form = "<form>";
+    $url='http://worldtimeapi.org/api/timezone/Asia/Jakarta';
+    $request = wp_remote_get($url);
+    $response = wp_remote_retrieve_body( $request );
+    $time = json_decode($response);
+
+    $nonce = wp_create_nonce( 'lgf_nonce' . get_the_ID() );
+    $form = '<form id="lgf_form" action="" method="post" enctype="multipart/form-data">';
     $form .= do_shortcode($content);
-    $form .= '<div class="lgf_control"><button class="lgf_primary">Submit</button></div>';
+    $form .= '<div class="lgf_control"><input type="hidden" name="localtime" value="'. $time->datetime .'"></div>';
+    $form .= '<div class="lgf_control"><input type="hidden" name="utc" value="'. $time->utc_datetime .'"></div>';
+    $form .= '<div class="lgf_control"><button class="lgf_button" data-nonce="' . $nonce . '" data-post_id="' . get_the_ID() . '">' . __( 'Submit', 'lgf_submit' ) . '</button></div>';
     $form .= "</form>";
     return $form;
   }
@@ -277,7 +305,7 @@ class LgaGenForm {
       array(
         'name' => '',
         'label' => 'value',
-        'required' => 'value',
+        'required' => false,
         'maxlength' => 'value',
         'rows' => 'value'
       ),
@@ -301,12 +329,15 @@ class LgaGenForm {
           '<label for="%s">%s <span>%s</span></label>',
           $name,
           $label,
-          ($required == true) ? '*' : ''
+          ($required == "true") ? '*' : ''
         );
         $input .= sprintf(
-          '<textarea style="width: 100%%" id="%s" name="%s" rows="5"></textarea>',
+          '<textarea style="width: 100%%" id="%s" name="%s" rows="%s" maxlength="%s" %s></textarea>',
           $name,
           $name,
+          (isset($rows)) ? $rows : 3,
+          $maxlength,
+          ($required == "true") ? 'required' : ''
         );
         break;
 
@@ -315,13 +346,15 @@ class LgaGenForm {
           '<label for="%s">%s <span>%s</span></label>',
           $name,
           $label,
-          ($required == true) ? '*' : ''
+          ($required == "true") ? '*' : ''
         );
         $input .= sprintf(
-          '<input id="%s" name="%s" type="%s">',
+          '<input id="%s" name="%s" type="%s" maxlength="%s" %s>',
           $name,
           $name,
           $type,
+          $maxlength,
+          ($required == "true") ? 'required' : ''
         );
     }
     return '<div class="lgf_control">'.$input.'</div>';
@@ -333,12 +366,42 @@ class LgaGenForm {
    * @since 1.0
    *
    */
-  public function lgf_add_quicktags()
-    { ?>
+  public function lgf_add_quicktags(){ ?>
         <script type="text/javascript">
         QTags.addButton( 'lgf', 'LGF Shortcode', '[lgf_shortcode][lgf_field name="lgf_name" label="Name" required="true" maxlength="-1"][lgf_field name="lgf_phone" label="Phone Number" required="true" maxlength="-1"][lgf_field name="lgf_email" label="Email Address" required="true" maxlength="-1"][lgf_field name="lgf_budget" label="Desired Budget" required="true" maxlength="-1"][lgf_field name="lgf_duration" label="Expected Project Duration" required="true" maxlength="-1"][lgf_field name="lgf_references" label="Project Reference" required="true" maxlength="-1"][lgf_field name="lgf_message" label="Message" required="true" maxlength="-1" rows="3"][/lgf_shortcode]' );
         </script>
-    <?php }
+    <?php 
+  }
+
+  /**
+   * Void submit form
+   *
+   * @since 1.0
+   *
+   */
+  public function lgf_send_form(){
+    $data = $_POST;
+
+    // check the nonce
+    if ( check_ajax_referer( 'lgf_nonce' . $data['post_id'], 'nonce', false ) == false ) {
+        wp_send_json_error();
+    }
+
+    //Insert data to wordpress custom post type
+    $postId = wp_insert_post( 
+      array(
+          'post_title' => $data['data'][array_search("lgf_name", array_column($data['data'], 'name'))]['value'], // title of the article
+          'post_status' => 'private',
+          'post_type' => 'submission',
+        ) 
+    );
+
+    //Insert data to post meta
+    foreach ($this->fields as $field) {
+      update_post_meta($postId, $field['id'], $data['data'][array_search($field['id'], array_column($data['data'], 'name'))]['value']);
+    }
+    die();
+  }
 }
 
 if (class_exists('LgaGenForm')) {

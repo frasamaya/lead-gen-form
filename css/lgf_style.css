@@ -1,0 +1,25 @@
+.lgf_control {
+    display: block;
+    margin-bottom: 10px;
+}
+
+.lgf_control label {
+    display: block;
+}
+
+.lgf_control input {
+    width: 100%;
+    line-height: 40px;
+    padding: 0 10px;
+}
+
+.lgf_control button {
+    border: solid 1px #555;
+    font-size: 14px;
+    padding: 10px 40px;
+}
+.notice {
+    background: #DCEDC8;
+    padding: 10px;
+    font-size: 14px;
+}
